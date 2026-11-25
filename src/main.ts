@@ -111,6 +111,8 @@ function setupScene(ff: FF): void {
 // Game state: everything the simulation needs, nothing about WebGL.
 const state = {
   x: 0,
+  z: 0,
+  rotationY: 0,
   elev: INITIAL_ELEVATION,
   force: 1,                        
   bullet: {
@@ -130,6 +132,8 @@ const keys = {
   right: false,
   up:    false,
   down:  false,
+  forward: false,
+  backward: false
 };
 
 let spacePressed = false;
@@ -143,12 +147,14 @@ function setupInput(): void {
 
     if (e.repeat) return;
 
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA')  keys.left  = true;
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-    if (e.code === 'ArrowUp' || e.code === 'KeyW')    keys.up    = true;
-    if (e.code === 'ArrowDown' || e.code === 'KeyS')  keys.down  = true;
-    if (e.code === 'Space')    spacePressed = true;
-    if (e.code === 'KeyR')     rPressed     = true;
+    if (e.code === 'KeyW')       keys.forward  = true;
+    if (e.code === 'KeyS')       keys.backward  = true;
+    if (e.code === 'KeyA')       keys.left  = true;
+    if (e.code === 'KeyD')       keys.right = true;
+    if (e.code === 'ArrowUp')    keys.up    = true;
+    if (e.code === 'ArrowDown')  keys.down  = true;
+    if (e.code === 'Space')      spacePressed = true;
+    if (e.code === 'KeyR')       rPressed     = true;
     if (e.code === 'Digit1') forceKey = 1;
     if (e.code === 'Digit2') forceKey = 2;
     if (e.code === 'Digit3') forceKey = 3;
@@ -156,10 +162,12 @@ function setupInput(): void {
   });
 
   window.addEventListener('keyup', (e) => {
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA')  keys.left  = false;
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-    if (e.code === 'ArrowUp' || e.code === 'KeyW')    keys.up    = false;
-    if (e.code === 'ArrowDown' || e.code === 'KeyS')  keys.down  = false;
+    if (e.code === 'KeyA')  keys.left  = false;
+    if (e.code === 'KeyD') keys.right = false;
+    if (e.code === 'KeyW')       keys.forward  = false;
+    if (e.code === 'KeyS')       keys.backward  = false;
+    if (e.code === 'ArrowUp')    keys.up    = false;
+    if (e.code === 'ArrowDown')  keys.down  = false;
   });
 }
 
@@ -196,6 +204,7 @@ function processInput(): void {
     state.bullet.status = 'ready';
     state.bullet.pos = [0, 0, 0];       
     state.x = 0;
+    state.z = 0;
     state.elev = INITIAL_ELEVATION;
 
     // Reaparece las 3 esferas
@@ -216,11 +225,16 @@ function processInput(): void {
 function update(dt: number): void {
   // Movimiento horizontal 
   let dx = 0;
+  let dz = 0;
   if (keys.left)  dx -= 1;
   if (keys.right) dx += 1;
-  state.x += dx * HORIZONTAL_SPEED * dt;
+  if (keys.forward) dz -= 1;
+  if (keys.backward) dz += 1;
 
-    // Fisica del proyectil 
+  state.x += dx * HORIZONTAL_SPEED * dt;
+  state.z += dz * HORIZONTAL_SPEED * dt;
+
+  // Fisica del proyectil 
   if (state.bullet.status === 'flying') {
     // Gravedad 
     state.bullet.vel[1] -= GRAVITY * dt;
@@ -312,7 +326,7 @@ function render(
   // Cuerpo (cubo) 
   ff.setMaterial({ ambient: TURRET_AMBIENT, diffuse: TURRET_COLOR });
   mat4.identity(model);
-  mat4.translate(model, model, [state.x, BODY_HEIGHT / 2, 0]);
+  mat4.translate(model, model, [state.x, BODY_HEIGHT / 2, state.z]);
   ff.setModelMatrix(model);
   ff.setNormalMatrix(mat3.normalFromMat4(normalMatrix, model));
   gl.bindVertexArray(bodyVao);
@@ -321,7 +335,7 @@ function render(
   // Torreta (esfera hundida a la mitad)
   ff.setMaterial({ ambient: TURRET_AMBIENT, diffuse: TURRET_COLOR });
   mat4.identity(model);
-  mat4.translate(model, model, [state.x, BODY_HEIGHT, 0]); 
+  mat4.translate(model, model, [state.x, BODY_HEIGHT, state.z]); 
   ff.setModelMatrix(model);
   ff.setNormalMatrix(mat3.normalFromMat4(normalMatrix, model));
   gl.bindVertexArray(turretVao);
@@ -332,7 +346,7 @@ function render(
   mat4.identity(model);
   mat4.translate(model, model, [state.x, BODY_HEIGHT, 0]); 
   mat4.rotateX(model, model, state.elev - Math.PI / 2);
-  mat4.translate(model, model, [0, CANNON_LENGTH / 2, 0]);
+  mat4.translate(model, model, [0, CANNON_LENGTH / 2, state.z]);
   ff.setModelMatrix(model);
   ff.setNormalMatrix(mat3.normalFromMat4(normalMatrix, model));
   gl.bindVertexArray(cannonVao);
@@ -355,7 +369,7 @@ function render(
     mat4.translate(model, model, [
       state.x, 
       BODY_HEIGHT / 2 + yOffset, 
-      (BODY_DEPTH / 2) + (BAR_DEPTH / 2) // Empujamos hacia la cara que ve la camara
+      state.z + (BODY_DEPTH / 2) + (BAR_DEPTH / 2) // Empujamos hacia la cara que ve la camara
     ]);
     
     ff.setModelMatrix(model);
@@ -369,7 +383,7 @@ function render(
   mat4.identity(model);
   if (state.bullet.status === 'ready') {
     // Pegada a la boca del cañon 
-    mat4.translate(model, model, [state.x, BODY_HEIGHT, 0]);
+    mat4.translate(model, model, [state.x, BODY_HEIGHT, state.z]);
     mat4.rotateX(model, model, state.elev - Math.PI / 2);
     mat4.translate(model, model, [0, CANNON_LENGTH, 0]);
   } else {
