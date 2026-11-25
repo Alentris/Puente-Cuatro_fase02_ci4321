@@ -188,7 +188,7 @@ function processInput(): void {
     state.bullet.pos = [
       state.x,
       BODY_HEIGHT + L * Math.sin(state.elev),
-      -L * Math.cos(state.elev),
+      state.z - L * Math.cos(state.elev),
     ];
 
     const speed = BASE_SPEED * FORCE_MULTIPLIERS[state.force - 1];
