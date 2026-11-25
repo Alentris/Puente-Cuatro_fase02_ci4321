@@ -62,24 +62,24 @@ export const CUBE_INDICES = new Uint16Array([
 ]);
 
 export const TABLE = new Float32Array([
-// x    y     z    nx  ny  nz
-  -5,   0,   20,   0,  1,  0,  // v0 frente-izquierda
-   5,   0,   20,   0,  1,  0,  // v1 frente-derecha
-   5,   0,  -20,   0,  1,  0,  // v2 fondo-derecha
-  -5,   0,  -20,   0,  1,  0,  // v3 fondo-izquierda
+  // x,   y,   z,  nx, ny, nz,   u,  v
+  -5, 0,  20,  0, 1, 0,  0,  0,  
+   5, 0,  20,  0, 1, 0,  5,  0,  
+   5, 0, -20,  0, 1, 0,  5, 20,  
+  -5, 0, -20,  0, 1, 0,  0, 20,  
 ]);
 
-//Dos triangulos, CCW visto desde +Y
 export const TABLE_INDEX = new Uint16Array([
-  0, 1, 2,
-  0, 2, 3,
+  0, 1, 2, 
+  0, 2, 3, 
 ]);
 
 export const FLOOR_COLOR: readonly [number, number, number, number] = [0x8b / 255, 0x5a / 255, 0x2b / 255, 1];
 export const FLOOR_AMBIENT: readonly [number, number, number, number] = [0x5a / 255, 0x3a / 255, 0x1b / 255, 1];
 
-export const STRIDE_BYTES = 6 * 4; // 4 bytes per float (Float32)
-export const NORMAL_OFFSET_BYTES = 3 * 4;
+export const STRIDE_BYTES = 8 * 4; // 8 floats * 4 bytes
+export const NORMAL_OFFSET_BYTES = 3 * 4; // Los siguientes 3 floats
+export const UV_OFFSET_BYTES = 6 * 4; // Los siguientes 2 floats
 
 // Torreta
 export const BODY_HEIGHT   = 0.6;     
@@ -133,3 +133,15 @@ export const ELEVATION_SPEED  = 1.5;   // radianes/segundo
 // Fisica del proyectil 
 export const GRAVITY = 9.8;          // unidades/segundo al cuadradado
 export const BASE_SPEED = 8.0;       // velocidad inicial de la bala 
+
+// Movimiento del tanque (Fase 2)
+export const MOVE_SPEED = 2.0;            // unidades/segundo al avanzar
+export const TURN_SPEED = 1.5;            // radianes/segundo al rotar el cuerpo
+export const TURRET_TURN_SPEED = 2.0;     // radianes/segundo al rotar la torreta
+export const MAX_TURRET_YAW = (3 * Math.PI) / 4; // ±135° 
+
+// Limites de la arena 
+export const ARENA_MIN_X = -4.5;
+export const ARENA_MAX_X =  4.5;
+export const ARENA_MIN_Z = -19.0;
+export const ARENA_MAX_Z =  19.0;

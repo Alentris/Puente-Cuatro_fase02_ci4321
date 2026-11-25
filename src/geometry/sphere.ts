@@ -1,41 +1,50 @@
 import type { MeshData } from './types';
 
-
-// Esfera centrada en el origen.
-
-export function createSphere(radius: number, latSegments: number, lonSegments: number) : MeshData {
-  const r = radius;
-  const lat = Math.max(2, latSegments);
-  const lon = Math.max(3, lonSegments);
-
+export function createSphere(radius: number, latSegments: number, lonSegments: number): MeshData {
   const vertices: number[] = [];
+  const indices: number[] = [];
 
-  // Vértices
-  for (let i = 0; i <= lat; i++) {
-    const phi = (i / lat) * Math.PI;       
+  // Generamos la cuadrícula de latitud/longitud
+  for (let lat = 0; lat <= latSegments; lat++) {
+    const phi = (lat / latSegments) * Math.PI;
     const sinPhi = Math.sin(phi);
     const cosPhi = Math.cos(phi);
-    for (let j = 0; j <= lon; j++) {
-      const theta = (j / lon) * Math.PI * 2;
-      const x = r * sinPhi * Math.cos(theta);
-      const y = r * cosPhi;
-      const z = r * sinPhi * Math.sin(theta);
-      // Normal 
-      vertices.push(x, y, z,  x / r, y / r, z / r);
+    const v = lat / latSegments; // V va de 0 (polo norte) a 1 (polo sur)
+
+    for (let lon = 0; lon <= lonSegments; lon++) {
+      const theta = (lon / lonSegments) * Math.PI * 2;
+      const sinTheta = Math.sin(theta);
+      const cosTheta = Math.cos(theta);
+      const u = lon / lonSegments; // U va de 0 a 1 alrededor del ecuador
+
+      const x = sinPhi * cosTheta;
+      const y = cosPhi;
+      const z = sinPhi * sinTheta;
+
+      vertices.push(
+        x * radius, y * radius, z * radius, // Posición
+        x, y, z,                            // Normal
+        u, v                                // UV
+      );
     }
   }
 
-  // Indices
-  const indices: number[] = [];
-  const stride = lon + 1;
-  for (let i = 0; i < lat; i++) {
-    for (let j = 0; j < lon; j++) {
-      const a = i * stride + j;
-      const b = a + 1;
-      const c = a + stride;
-      const d = c + 1;
-      indices.push(a, b, d);
-      indices.push(a, d, c);
+  // Índices
+  const rowSize = lonSegments + 1;
+  for (let lat = 0; lat < latSegments; lat++) {
+    for (let lon = 0; lon < lonSegments; lon++) {
+      const first = lat * rowSize + lon;
+      const second = first + rowSize;
+
+      // Evitamos triángulos degenerados en los polos
+      if (lat !== 0) {
+        // Antes: (first, second, first + 1)
+        indices.push(first, first + 1, second); 
+      }
+      if (lat !== latSegments - 1) {
+      // Este ya estaba bien (CCW)
+        indices.push(first + 1, second + 1, second); 
+      }
     }
   }
 

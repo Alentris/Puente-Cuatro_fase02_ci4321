@@ -1,44 +1,30 @@
 import type { MeshData } from './types';
 
-
-//Cilindro ABIERTO (tubo), centrado en el origen, eje a lo largo de Y.
-
-export function createCylinder(
-  radius: number,
-  height: number,
-  segments: number,
-): MeshData {
-  const r = radius;
-  const h = height / 2;
-  const N = Math.max(3, segments);
-
+export function createCylinder(radius: number, height: number, segments: number): MeshData {
   const vertices: number[] = [];
   const indices: number[] = [];
+  const h = height / 2;
 
-  // Anillo inferior 
-  for (let i = 0; i < N; i++) {
-    const theta = (i / N) * Math.PI * 2;
-    const c = Math.cos(theta);
-    const s = Math.sin(theta);
-    vertices.push(r * c, -h, r * s,  c, 0, s);
+  // Generamos anillos de abajo a arriba
+  for (let i = 0; i <= segments; i++) {
+    const theta = (i / segments) * Math.PI * 2;
+    const x = Math.cos(theta);
+    const z = Math.sin(theta);
+    const u = i / segments; // U va de 0 a 1 alrededor del cilindro
+
+    // Vértice de abajo (v = 0)
+    vertices.push(x * radius, -h, z * radius, x, 0, z, u, 0);
+    // Vértice de arriba (v = 1)
+    vertices.push(x * radius,  h, z * radius, x, 0, z, u, 1);
   }
 
-  // Anillo superior 
-  for (let i = 0; i < N; i++) {
-    const theta = (i / N) * Math.PI * 2;
-    const c = Math.cos(theta);
-    const s = Math.sin(theta);
-    vertices.push(r * c,  h, r * s,  c, 0, s);
-  }
-
-  // Indices triangulos por segmento del lateral 
-  for (let i = 0; i < N; i++) {
-    const b0 = i;
-    const b1 = (i + 1) % N;
-    const t0 = N + i;
-    const t1 = N + ((i + 1) % N);
-    indices.push(b0, t0, t1);
-    indices.push(b0, t1, b1);
+  // Índices para los triángulos laterales
+  for (let i = 0; i < segments; i++) {
+    const base = i * 2;
+    indices.push(
+      base, base + 1, base + 3, // Triángulo 1
+      base, base + 3, base + 2  // Triángulo 2
+    );
   }
 
   return {
